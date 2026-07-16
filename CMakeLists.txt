@@ -10,7 +10,8 @@ add_executable(kawr
     src/Camera.cpp
     src/Shape.cpp
     src/Sketch.cpp
-    src/ParticleSystem.cpp)
+    src/ParticleSystem.cpp
+    src/MeshExport.cpp)
 
 target_include_directories(kawr PRIVATE src)
 
