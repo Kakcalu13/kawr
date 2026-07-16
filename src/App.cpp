@@ -7,6 +7,7 @@
 #include <string>
 
 #include "GL.h"
+#include "MeshExport.h"
 #include "Shape.h"
 
 // ---------------------------------------------------------------------------
@@ -131,17 +132,22 @@ void App::drawOverlay() const {
     glDisable(GL_DEPTH_TEST);
 
     glColor3f(0.75f, 0.78f, 0.85f);
-    drawText(14, m_winH - 24,
-             "Left-drag: draw   Right-drag: orbit   Scroll: grid size   "
-             "+/-: zoom   S: snap   C: clear   Esc: quit",
+    drawText(14, m_winH - 22,
+             "L-drag: draw   R-drag: orbit   Scroll: grid   +/-: zoom",
+             GLUT_BITMAP_9_BY_15);
+    drawText(14, m_winH - 40,
+             "[ ]: subdiv   , .: gap   S: snap   E: export   C: clear   Esc: quit",
              GLUT_BITMAP_9_BY_15);
 
-    char grid[32];
+    char grid[32], gap[32];
     std::snprintf(grid, sizeof(grid), "%.2f", m_sketch.gridStep());
+    std::snprintf(gap, sizeof(gap), "%.2f", m_sketch.thickness());
     std::string status = std::string("snap: ") +
                          (m_sketch.snapEnabled() ? "on" : "off") +
                          "   grid: " + grid +
-                         "   closed shapes: " +
+                         "   subdiv: " + std::to_string(m_sketch.subdiv()) +
+                         "   gap: " + gap +
+                         "   shapes: " +
                          std::to_string(m_sketch.shapes().size());
     glColor3f(LAVENDER[0], LAVENDER[1], LAVENDER[2]);
     drawText(14, 16, status, GLUT_BITMAP_9_BY_15);
@@ -246,6 +252,22 @@ void App::keyboard(unsigned char key, int, int) {
         case 'S':
             m_sketch.toggleSnap();
             break;
+        case ']':
+        case '}':
+            m_sketch.subdivide(true);  // finer mesh
+            break;
+        case '[':
+        case '{':
+            m_sketch.subdivide(false);  // coarser mesh
+            break;
+        case '.':
+        case '>':
+            m_sketch.changeThickness(1.25);  // wider front/back gap
+            break;
+        case ',':
+        case '<':
+            m_sketch.changeThickness(0.8);  // narrower front/back gap
+            break;
         case '+':
         case '=':
             m_camera.zoomBy(0.9);
@@ -254,6 +276,19 @@ void App::keyboard(unsigned char key, int, int) {
         case '_':
             m_camera.zoomBy(1.1);
             break;
+        case 'e':
+        case 'E': {
+            ExportStats st = exportGlb(m_sketch.shapes(), "kawr_export.glb");
+            if (st.ok)
+                std::printf("[kawr] exported %d panels, %d verts, %d tris "
+                            "-> kawr_export.glb\n",
+                            st.panels, st.verts, st.quads * 2);
+            else
+                std::printf("[kawr] export failed (could not open "
+                            "kawr_export.glb)\n");
+            std::fflush(stdout);
+            break;
+        }
         default:
             break;
     }
