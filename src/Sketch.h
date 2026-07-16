@@ -25,6 +25,15 @@ public:
     double gridStep() const { return m_gridStep; }
     void nudgeGrid(double delta);
 
+    // Mesh resolution: double / halve the lattice density on every shape.
+    void subdivide(bool finer);
+    int subdiv() const { return m_meshDiv; }
+
+    // Panel gap: distance between the front and back sides of every shape,
+    // along the drawing-plane normal (Y). Scales by `factor` per call.
+    void changeThickness(double factor);
+    double thickness() const { return m_thickness; }
+
     void clear();
 
     const std::vector<Stroke>& strokes() const { return m_strokes; }
@@ -46,6 +55,7 @@ private:
     // Append the shorter boundary arc between two hits on the same shape to the
     // current stroke, forming a shared edge.
     void appendSharedArc(const BoundaryHit& from, const BoundaryHit& to);
+    void rebuildAllMeshes();
 
     std::vector<Stroke> m_strokes;  // open polylines
     std::vector<Shape> m_shapes;    // closed shapes
@@ -54,8 +64,14 @@ private:
 
     bool m_snap = true;
     double m_gridStep = 1.0;
+    int m_meshDiv = 16;        // lattice cells across a shape's largest dimension
+    double m_thickness = 0.8;  // gap between the front and back panels (in Y)
 
     static constexpr double GRID_MIN = 0.25;
     static constexpr double GRID_MAX = 4.0;
     static constexpr double MIN_SPACING = 0.08;  // freehand point spacing
+    static constexpr int SUBDIV_MIN = 2;
+    static constexpr int SUBDIV_MAX = 128;
+    static constexpr double THICK_MIN = 0.05;
+    static constexpr double THICK_MAX = 20.0;
 };

@@ -192,7 +192,8 @@ bool Sketch::endStroke() {
 
         Shape sh;
         sh.loop = s.pts;
-        sh.offset = DUPLICATE_OFFSET;
+        sh.offset = Vec3(0.0, -m_thickness, 0.0);
+        sh.buildMesh(m_meshDiv);  // fill the interior with a connected lattice
         m_shapes.push_back(sh);
         formed = true;
     } else {
@@ -202,6 +203,31 @@ bool Sketch::endStroke() {
     }
     m_current.pts.clear();
     return formed;
+}
+
+void Sketch::subdivide(bool finer) {
+    int v = finer ? m_meshDiv * 2 : m_meshDiv / 2;
+    if (v < SUBDIV_MIN) v = SUBDIV_MIN;
+    if (v > SUBDIV_MAX) v = SUBDIV_MAX;
+    if (v != m_meshDiv) {
+        m_meshDiv = v;
+        rebuildAllMeshes();
+    }
+}
+
+void Sketch::rebuildAllMeshes() {
+    for (Shape& sh : m_shapes) sh.buildMesh(m_meshDiv);
+}
+
+void Sketch::changeThickness(double factor) {
+    double t = m_thickness * factor;
+    if (t < THICK_MIN) t = THICK_MIN;
+    if (t > THICK_MAX) t = THICK_MAX;
+    m_thickness = t;
+    // The back panel is applied live at draw time (verts + offset), so just
+    // updating each shape's offset is enough — no mesh rebuild.
+    Vec3 off(0.0, -m_thickness, 0.0);
+    for (Shape& sh : m_shapes) sh.offset = off;
 }
 
 void Sketch::clear() {
